@@ -31,7 +31,8 @@ if (Test-Path $Target) {
     if ($items.Count -gt 0 -and -not (Test-Path (Join-Path $Target $marker))) {
         throw "Der Ordner $Target ist nicht leer und stammt nicht von diesem Skript. Bitte einen leeren oder neuen Ordner angeben."
     }
-    $items | Remove-Item -Recurse -Force
+    # An existing Git repository in the folder (with its history and the link to GitHub) is kept: only the files are replaced.
+    $items | Where-Object { $_.Name -ne '.git' } | Remove-Item -Recurse -Force
 }
 else { New-Item -ItemType Directory -Force $Target | Out-Null }
 
@@ -77,6 +78,16 @@ Write-Host 'Pruefung bestanden: keine Schluessel, Benutzerpfade, Firmen-Adressen
 # ---- Fresh repository without history ----
 Push-Location $Target
 try {
+    if (Test-Path (Join-Path $Target '.git')) {
+        # Git writes line-ending warnings to stderr; they are not errors.
+        $before = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+        git add -A 2>&1 | Out-Null
+        $ErrorActionPreference = $before
+        Write-Host 'Vorhandenes Git-Repository beibehalten. Geaenderte Dateien:' -ForegroundColor Green
+        git status --short
+        Write-Host 'Jetzt mit git commit und git push hochladen.' -ForegroundColor Cyan
+        return
+    }
     git init -b main 2>&1 | Out-Null
     # The marker file is only for this script and must not be uploaded.
     Add-Content (Join-Path $Target '.git\info\exclude') $marker -Encoding ASCII

@@ -18,9 +18,14 @@ public static class WindowLayouts
 
     public static bool Compatible(IEnumerable<MonitorSnapshot> saved, IEnumerable<MonitorSnapshot> current)
     {
-        var a = saved.OrderBy(m => m.Device).ToArray(); var b = current.OrderBy(m => m.Device).ToArray();
-        return a.Length > 0 && a.All(m => !string.IsNullOrEmpty(m.Identity) && m.Dpi > 0) && a.SequenceEqual(b);
+        var a = ByPosition(saved); var b = ByPosition(current);
+        return a.Length > 0 && a.Length == b.Length && a.All(m => !string.IsNullOrEmpty(m.Identity) && m.Dpi > 0) && a.Zip(b).All(pair => SameMonitor(pair.First, pair.Second));
     }
+    // Windows numbers the displays (\\.\DISPLAY10, ...) anew whenever they are connected again, so the name says nothing.
+    // Monitors are compared by where they are: same screen, same size, same place, same scaling, same primary flag.
+    public static MonitorSnapshot[] ByPosition(IEnumerable<MonitorSnapshot> monitors) => [.. monitors.OrderBy(m => m.Bounds.X).ThenBy(m => m.Bounds.Y)];
+    public static bool SameMonitor(MonitorSnapshot a, MonitorSnapshot b) =>
+        a.Identity == b.Identity && a.Bounds == b.Bounds && a.WorkArea == b.WorkArea && a.Primary == b.Primary && a.Dpi == b.Dpi;
     public static string Title(nint handle) { var text = new StringBuilder(1024); Native.GetWindowText(handle, text, text.Capacity); return text.ToString(); }
     public static string? Executable(nint handle)
     {

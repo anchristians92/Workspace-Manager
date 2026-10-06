@@ -30,17 +30,20 @@ internal static class Diagnose
             var compatible = WindowLayouts.Compatible(profile.Monitors, monitors);
             Add(); Add($"Passen die Monitore zum Layout? {(compatible ? "JA" : "NEIN")}");
             if (!compatible)
-                foreach (var saved in profile.Monitors)
+            {
+                // The monitors are paired from left to right, the names (\\.\DISPLAYn) are only numbers that Windows hands out anew.
+                var before = WindowLayouts.ByPosition(profile.Monitors); var after = WindowLayouts.ByPosition(monitors);
+                if (before.Length != after.Length) Add($"  - Anzahl der Monitore: jetzt {after.Length}, gespeichert {before.Length}");
+                for (var i = 0; i < Math.Min(before.Length, after.Length); i++)
                 {
-                    var now = monitors.FirstOrDefault(m => m.Device == saved.Device);
-                    if (now is null) { Add($"  - {saved.Device} gibt es jetzt nicht mehr (oder heißt anders)."); continue; }
-                    if (now.Identity != saved.Identity) Add($"  - {saved.Device}: andere Monitor-Kennung (jetzt {now.Identity}, gespeichert {saved.Identity})");
-                    if (now.Bounds != saved.Bounds) Add($"  - {saved.Device}: Größe/Position {Show(now.Bounds)} statt {Show(saved.Bounds)}");
-                    if (now.WorkArea != saved.WorkArea) Add($"  - {saved.Device}: Arbeitsbereich (ohne Taskleiste) {Show(now.WorkArea)} statt {Show(saved.WorkArea)}");
-                    if (now.Primary != saved.Primary) Add($"  - {saved.Device}: Hauptmonitor jetzt {now.Primary}, gespeichert {saved.Primary}");
-                    if (now.Dpi != saved.Dpi) Add($"  - {saved.Device}: Skalierung {now.Dpi * 100 / 96}% statt {saved.Dpi * 100 / 96}%");
+                    var saved = before[i]; var now = after[i]; var name = $"Monitor {i + 1} von links";
+                    if (now.Identity != saved.Identity) Add($"  - {name}: andere Monitor-Kennung (jetzt {now.Identity}, gespeichert {saved.Identity})");
+                    if (now.Bounds != saved.Bounds) Add($"  - {name}: Größe/Position {Show(now.Bounds)} statt {Show(saved.Bounds)}");
+                    if (now.WorkArea != saved.WorkArea) Add($"  - {name}: Arbeitsbereich (ohne Taskleiste) {Show(now.WorkArea)} statt {Show(saved.WorkArea)}");
+                    if (now.Primary != saved.Primary) Add($"  - {name}: Hauptmonitor jetzt {now.Primary}, gespeichert {saved.Primary}");
+                    if (now.Dpi != saved.Dpi) Add($"  - {name}: Skalierung {now.Dpi * 100 / 96}% statt {saved.Dpi * 100 / 96}%");
                 }
-                foreach (var now in monitors.Where(m => profile.Monitors.All(s => s.Device != m.Device))) Add($"  - {now.Device} ist neu hinzugekommen.");
+            }
 
             var live = WindowLayouts.Capture();
             var matches = WindowLayouts.Match(profile.Windows, live);

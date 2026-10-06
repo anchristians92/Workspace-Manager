@@ -147,6 +147,13 @@ internal static class SelfTests
                 Assert(!WindowLayouts.Compatible([monitor], [monitor with { Identity = "other" }]));
                 Assert(!WindowLayouts.Compatible([monitor], [monitor with { Bounds = new(-1920, 0, 1920, 1080) }]));
                 Assert(!WindowLayouts.Compatible([monitor], [])); Assert(!WindowLayouts.Compatible([], []));
+                // After re-docking Windows hands out new display numbers; the same screens must still count as the same.
+                var left = monitor with { Device = "DISPLAY1", Bounds = new(-1920, 0, 1920, 1080), WorkArea = new(-1920, 0, 1920, 1032), Primary = false };
+                var main = monitor with { Device = "DISPLAY10", Identity = "main", Bounds = new(0, 0, 3840, 2160), WorkArea = new(0, 0, 3840, 2088), Primary = true, Dpi = 144 };
+                Assert(WindowLayouts.Compatible([left, main], [left, main with { Device = "DISPLAY14" }]));
+                Assert(WindowLayouts.Compatible([main, left], [left with { Device = "DISPLAY2" }, main with { Device = "DISPLAY14" }]));
+                Assert(!WindowLayouts.Compatible([left, main], [left, main with { Device = "DISPLAY14", Bounds = new(0, 0, 2560, 1440) }]));
+                Assert(!WindowLayouts.Compatible([left, main], [left, main with { Device = "DISPLAY14", Identity = "other" }]));
             });
             Test("Hotkey parser aliases and digits", () => { Assert(Hotkey.Parse("Strg+Alt+1") == Hotkey.Parse("Ctrl+Alt+D1")); Reject(() => Hotkey.Parse("Ctrl+Ctrl+X")); Reject(() => Hotkey.Parse("I")); });
             Test("Configuration validation and secret fields rejected", () =>

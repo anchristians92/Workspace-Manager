@@ -38,6 +38,7 @@ WorkspaceManager steht unter der [PolyForm Noncommercial License 1.0.0](LICENSE)
 
 - **Privat und nicht-kommerziell** darfst du es kostenlos nutzen, weitergeben und verändern.
 - **Für jede gewerbliche Nutzung** ist eine schriftliche Absprache und eine Lizenz nötig, siehe [COMMERCIAL.md](COMMERCIAL.md).
+  - Die Lizenz wird gegen eine Spende erstellt. 
 
 Das ist keine Open-Source-Lizenz im Sinne der OSI, der Quellcode ist aber einsehbar.
 

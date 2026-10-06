@@ -244,6 +244,7 @@ internal sealed class SettingsForm : Form
             case "Einstellungen": Preferences(body); break;
             case "Lizenz": LicensePage(body); break;
             case "Erweitert": Advanced(body); break;
+            case "Info": InfoPage(body); break;
             case "Addons": AddonsPage(body); break;
             default:
                 if (name.StartsWith("Addon|", StringComparison.Ordinal)) AddonPage(body, name);
@@ -274,6 +275,8 @@ internal sealed class SettingsForm : Form
         Ui.Add(current, feedback);
 
         var license = LicenseService.State;
+        // With a valid license key there is nothing to look after, the details are under Einstellungen, Lizenz.
+        if (license.Kind == LicenseKind.Licensed) return;
         var licenseCard = Ui.Card(body); Ui.Paragraph(licenseCard, "Lizenz", 13.5f, true);
         Ui.Paragraph(licenseCard, license.Headline, 10.5f, true); Ui.Paragraph(licenseCard, license.Detail, muted: true);
         Ui.Add(licenseCard, Ui.Actions(Ui.Button("Lizenz verwalten", () => ShowPage("Lizenz"), license.Kind is LicenseKind.Trial or LicenseKind.Blocked)));
@@ -474,13 +477,13 @@ internal sealed class SettingsForm : Form
         var monitors = Ui.Card(body); Ui.Paragraph(monitors, "Angeschlossene Monitore", 13.5f, true);
         foreach (var monitor in WindowLayouts.Monitors()) Ui.Paragraph(monitors, $"{monitor.Device} · {monitor.Bounds.Width} × {monitor.Bounds.Height} · {monitor.Dpi * 100 / 96}%" + (monitor.Primary ? " · Hauptmonitor" : ""));
     }
-    static bool IsSettingsPage(string name) => name is "Einstellungen" or "Lizenz" or "Erweitert" or "Addons" || name.StartsWith("Addon|", StringComparison.Ordinal);
+    static bool IsSettingsPage(string name) => name is "Einstellungen" or "Lizenz" or "Erweitert" or "Addons" or "Info" || name.StartsWith("Addon|", StringComparison.Ordinal);
 
     // Einstellungen has tabs: general settings, the tabs of installed addons, Addons, license and advanced (technical) options.
     void SettingsTabs(TableLayoutPanel body, string current)
     {
         // The settings of an addon are opened from the Addons tab, so that tab stays highlighted while one is shown.
-        var tabs = new List<(string Title, string Page)> { ("Allgemein", "Einstellungen"), ("Addons", "Addons"), ("Lizenz", "Lizenz"), ("Erweitert", "Erweitert") };
+        var tabs = new List<(string Title, string Page)> { ("Allgemein", "Einstellungen"), ("Addons", "Addons"), ("Lizenz", "Lizenz"), ("Erweitert", "Erweitert"), ("Info", "Info") };
         var buttons = tabs.Select(tab =>
         {
             var button = Ui.Button(tab.Title, () => ShowPage(tab.Page));
@@ -535,6 +538,30 @@ internal sealed class SettingsForm : Form
                 Ui.Add(list, Ui.Actions([.. tabs.Select(x => Ui.Button(tabs.Count == 1 ? "Einstellungen öffnen" : x.Tab.Title, () => ShowPage($"Addon|{id}|{x.Tab.Title}")))]));
         }
     }
+    // Who wrote the program, how to reach them and under which terms it can be used.
+    void InfoPage(TableLayoutPanel body)
+    {
+        Ui.Paragraph(body, "Über WorkspaceManager und wie du den Entwickler erreichst.", muted: true);
+        var version = typeof(SettingsForm).Assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+        var about = Ui.Card(body); Ui.Paragraph(about, "WorkspaceManager", 13.5f, true);
+        Ui.Paragraph(about, $"Version {version}");
+        Ui.Paragraph(about, "Fensterlayouts pro Standort, Programmstarter und Logins für Windows.", muted: true);
+
+        var contact = Ui.Card(body); Ui.Paragraph(contact, "Kontakt", 13.5f, true);
+        Ui.Paragraph(contact, "Andre Christians", 10.5f, true);
+        Ui.Selectable(contact, "E-Mail: anchristians@gmx.de\r\nGitHub: anchristians92", 10);
+        Ui.Add(contact, Ui.Actions(
+            Ui.Button("E-Mail schreiben", () => OpenLink("mailto:anchristians@gmx.de?subject=WorkspaceManager"), true),
+            Ui.Button("GitHub öffnen", () => OpenLink("https://github.com/anchristians92/Workspace-Manager")),
+            Ui.CopyButton("Kopieren", () => "anchristians@gmx.de")));
+
+        var terms = Ui.Card(body); Ui.Paragraph(terms, "Nutzung", 13.5f, true);
+        Ui.Paragraph(terms, "Private Nutzung frei und erweiterbar. Kommerzielle Nutzung und Erweiterung nur mit Lizenz.");
+        Ui.Paragraph(terms, "Die genauen Bedingungen stehen in der Lizenzdatei und in COMMERCIAL.md im Projekt auf GitHub. Eine Lizenz für den Einsatz in einer Firma gibt es auf Anfrage.", muted: true);
+        Ui.Add(terms, Ui.Actions(Ui.Button("Lizenz verwalten", () => ShowPage("Lizenz"))));
+    }
+    // Only fixed web and mail addresses of this program are opened here.
+    static void OpenLink(string address) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(address) { UseShellExecute = true });
     void LicensePage(TableLayoutPanel body)
     {
         Ui.Paragraph(body, "Privat ist WorkspaceManager kostenlos. Für gewerbliche Nutzung ist eine schriftlich vereinbarte Lizenz nötig.", muted: true);

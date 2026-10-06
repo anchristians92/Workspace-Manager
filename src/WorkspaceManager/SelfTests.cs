@@ -66,9 +66,9 @@ internal static class SelfTests
         AppTheme.PreviewDark = null; AppTheme.Refresh(); AppTheme.Apply(form);
         form.Size = new Size(820, 660); Capture(form, "overview-compact");
         static IEnumerable<Control> Descendants(Control parent) => parent.Controls.Cast<Control>().SelectMany(c => new[] { c }.Concat(Descendants(c)));
-        foreach (var name in new[] { "Programme", "Logins", "Standorte", "Einstellungen", "Lizenz", "Erweitert" })
+        foreach (var name in new[] { "Programme", "Logins", "Standorte", "Einstellungen", "Lizenz", "Erweitert", "Info" })
         {
-            if (name is "Lizenz" or "Erweitert") Descendants(form).OfType<Button>().Single(b => b.Text == "Einstellungen").PerformClick();
+            if (name is "Lizenz" or "Erweitert" or "Info") Descendants(form).OfType<Button>().Single(b => b.Text == "Einstellungen").PerformClick();
             Descendants(form).OfType<Button>().Single(b => b.Text == name).PerformClick();
             Capture(form, name.ToLowerInvariant());
         }

@@ -1,0 +1,9 @@
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <!-- The files of the addon "Passwort-Tresor". Used by the main installer (optional page "Addons") and by the addon's
+       own installer. Variables: Version, VaultDir (folder with the built DLL). Directory AddonVaultDir is declared by the including package. -->
+  <Component Id="VaultAddon" Directory="AddonVaultDir" Guid="8A41D3F6-62B9-4C07-A5E1-0B7C9D2F4E36" Condition="ADDON_VAULT = 1">
+    <File Id="VaultAddonDll" Source="$(VaultDir)\WorkspaceManager.Addon.Vault.dll" KeyPath="yes" />
+    <RegistryValue Root="HKLM" Key="SOFTWARE\WorkspaceManager\Addons\Vault" Name="Version" Type="string" Value="$(Version)" />
+    <RemoveFolder Id="RemoveAddonVaultDir" Directory="AddonVaultDir" On="uninstall" />
+  </Component>
+</Include>

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>LicenseTool</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\WorkspaceManager\LicenseToken.cs" Link="LicenseToken.cs" />
+    <Compile Include="..\Shared\LicenseLog.cs" Link="LicenseLog.cs" />
+  </ItemGroup>
+</Project>

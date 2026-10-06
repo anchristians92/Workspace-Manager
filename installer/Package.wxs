@@ -1,0 +1,183 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+  <!-- Variables passed on the command line by build.ps1: Version, PublishDir -->
+  <Package Name="WorkspaceManager"
+           Manufacturer="Andre Christians"
+           Version="$(Version)"
+           UpgradeCode="6B1C0F5E-3D8A-4B9E-9C52-7A4E1D2F8B30"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="Eine neuere Version von WorkspaceManager ist bereits installiert." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="app.ico" SourceFile="..\src\WorkspaceManager\Assets\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="app.ico" />
+
+    <!-- The tray app is always running: end it before files are replaced or removed. -->
+    <util:CloseApplication Id="CloseWorkspaceManager" Target="WorkspaceManager.exe" CloseMessage="no" RebootPrompt="no" TerminateProcess="1" />
+
+    <!-- Installed to C:\Program Files\WorkspaceManager_Windows (shown as "Programme" on German Windows). -->
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="WorkspaceManager_Windows">
+        <Files Include="$(PublishDir)\**">
+          <!-- Addons are offered on their own page and installed from their own files. -->
+          <Exclude Files="$(PublishDir)\Addons\**" />
+        </Files>
+        <Directory Id="AddonsFolder" Name="Addons">
+          <Directory Id="AddonRemoteDir" Name="Remote" />
+          <Directory Id="AddonVaultDir" Name="Vault" />
+        </Directory>
+      </Directory>
+    </StandardDirectory>
+
+    <!-- Start menu: folder "WorkspaceManager" containing the shortcut "WorkspaceManager". -->
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppStartMenuFolder" Name="WorkspaceManager" />
+    </StandardDirectory>
+
+    <Component Id="StartMenuShortcut" Directory="AppStartMenuFolder" Guid="2F6A9D41-8B7C-4E35-A1D0-5C3B9E7F4A12">
+      <Shortcut Id="AppShortcut" Name="WorkspaceManager" Description="Fensterlayouts, Programmstarter und Logins"
+                Target="[INSTALLFOLDER]WorkspaceManager.exe" WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="RemoveAppMenuFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\WorkspaceManager" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+      <!-- Remove an autostart entry the app created itself; user data stays untouched. -->
+      <RemoveRegistryValue Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="PersonalWorkspaceManager" />
+    </Component>
+
+    <!-- Autostart with Windows, chosen on the "Start mit Windows" page (same entry the app's own setting uses). -->
+    <Property Id="AUTOSTART" Value="1" />
+    <Component Id="AutostartEntry" Directory="INSTALLFOLDER" Guid="9D3E7B52-4A1F-4C86-B0E9-1F5A2C8D6E47" Condition="AUTOSTART = 1">
+      <RegistryValue Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run" Name="PersonalWorkspaceManager" Type="string"
+                     Value="&quot;[INSTALLFOLDER]WorkspaceManager.exe&quot; --autostart" KeyPath="yes" />
+    </Component>
+
+    <!-- Usage type chosen on the "Nutzungsart" page. The app picks this up on its first start (see LicenseService). -->
+    <Property Id="LICENSEMODE" Value="Private" />
+    <!-- Domain-joined computers are company computers: private use is not offered there. -->
+    <Property Id="DOMAINNAME">
+      <RegistrySearch Id="DomainSearch" Root="HKLM" Key="SYSTEM\CurrentControlSet\Services\Tcpip\Parameters" Name="Domain" Type="raw" />
+    </Property>
+    <SetProperty Id="LICENSEMODE" Value="Commercial" After="AppSearch" Sequence="both" Condition="DOMAINNAME &lt;&gt; &quot;&quot;" />
+    <Property Id="LICENSEKEY" Secure="yes" />
+    <Component Id="InstallerLicenseMode" Directory="INSTALLFOLDER" Guid="C41B8A27-6E3D-4F90-9A15-D2B7E58F3C61">
+      <RegistryValue Root="HKLM" Key="SOFTWARE\WorkspaceManager" Name="InstallerLicenseMode" Type="string" Value="[LICENSEMODE]" KeyPath="yes" />
+      <!-- Addon installers look the program folder up here. -->
+      <RegistryValue Root="HKLM" Key="SOFTWARE\WorkspaceManager" Name="InstallDir" Type="string" Value="[INSTALLFOLDER]" />
+      <RemoveFolder Id="RemoveAddonsFolder" Directory="AddonsFolder" On="uninstall" />
+    </Component>
+    <Component Id="InstallerLicenseKey" Directory="INSTALLFOLDER" Guid="7A92D5E3-1B4C-4D68-8F07-3E6C9A1B5D24" Condition="LICENSEMODE = &quot;Commercial&quot; AND LICENSEKEY &lt;&gt; &quot;&quot;">
+      <RegistryValue Root="HKLM" Key="SOFTWARE\WorkspaceManager" Name="InstallerLicenseKey" Type="string" Value="[LICENSEKEY]" KeyPath="yes" />
+    </Component>
+
+    <!-- Addons chosen on the "Addons" page (1 = install). A silent install can set them: ADDON_REMOTE=0 ADDON_VAULT=0 -->
+    <Property Id="ADDON_REMOTE" Value="1" />
+    <Property Id="ADDON_VAULT" Value="1" />
+    <?include Addon-Remote.wxi?>
+    <?include Addon-Vault.wxi?>
+
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+    <UI>
+      <Dialog Id="UsageDomainDlg" Width="370" Height="270" Title="!(loc.InstallDirDlg_Title)">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Nutzungsart" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="Dieser Computer ist Mitglied einer Domäne." />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="DomainInfo" Type="Text" X="25" Y="58" Width="320" Height="64" NoPrefix="yes"
+                 Text="Dieser Computer ist Mitglied der Domäne [DOMAINNAME]. Auf Firmen-Computern ist nur die kommerzielle Nutzung vorgesehen: 30 Tage zum Testen, danach wird eine Lizenz benötigt. Sie wird auf Anfrage und gegen eine Spende ausgestellt." />
+        <Control Id="KeyLabel" Type="Text" X="25" Y="136" Width="320" Height="28" NoPrefix="yes" Text="Lizenzschlüssel, falls schon vorhanden (optional, kann später im Programm eingetragen werden):" />
+        <Control Id="KeyEdit" Type="Edit" X="25" Y="168" Width="320" Height="18" Property="LICENSEKEY" Sunken="yes" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+          <Publish Event="NewDialog" Value="InstallDirDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
+          <Publish Event="NewDialog" Value="AutostartDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <Dialog Id="UsageDlg" Width="370" Height="270" Title="!(loc.InstallDirDlg_Title)">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Nutzungsart" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="Wie verwendest du WorkspaceManager?" />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="UsageGroup" Type="RadioButtonGroup" X="25" Y="58" Width="320" Height="62" Property="LICENSEMODE">
+          <RadioButtonGroup Property="LICENSEMODE">
+            <RadioButton Value="Private" X="0" Y="0" Width="320" Height="18" Text="Privat / nicht-kommerziell (kostenlos)" />
+            <RadioButton Value="Commercial" X="0" Y="22" Width="320" Height="18" Text="Kommerziell (Firma, Selbstständige, Erwerbszweck)" />
+          </RadioButtonGroup>
+        </Control>
+        <Control Id="UsageHint" Type="Text" X="25" Y="108" Width="320" Height="40" NoPrefix="yes"
+                 Text="Kommerziell: 30 Tage zum Testen, danach wird eine Lizenz benötigt. Sie wird auf Anfrage und gegen eine Spende ausgestellt." />
+        <Control Id="KeyLabel" Type="Text" X="25" Y="152" Width="320" Height="28" NoPrefix="yes" Text="Lizenzschlüssel, falls schon vorhanden (nur für kommerzielle Nutzung, optional, kann später im Programm eingetragen werden):" />
+        <Control Id="KeyEdit" Type="Edit" X="25" Y="184" Width="320" Height="18" Property="LICENSEKEY" Sunken="yes" />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+          <Publish Event="NewDialog" Value="InstallDirDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
+          <Publish Event="NewDialog" Value="AutostartDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <Dialog Id="AutostartDlg" Width="370" Height="270" Title="!(loc.InstallDirDlg_Title)">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Start mit Windows" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="Soll WorkspaceManager nach der Anmeldung automatisch starten?" />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="AutostartCheck" Type="CheckBox" X="25" Y="64" Width="320" Height="18" Property="AUTOSTART" CheckBoxValue="1" Text="WorkspaceManager mit Windows starten" />
+        <Control Id="AutostartHint" Type="Text" X="43" Y="86" Width="300" Height="48" NoPrefix="yes"
+                 Text="Das Programm läuft dann im Infobereich neben der Uhr und stellt dort deine Fensterlayouts wieder her. Du kannst das später jederzeit in den Einstellungen des Programms ändern." />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+          <Publish Event="NewDialog" Value="UsageDlg" Condition="DOMAINNAME = &quot;&quot;" />
+          <Publish Event="NewDialog" Value="UsageDomainDlg" Condition="DOMAINNAME &lt;&gt; &quot;&quot;" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
+          <Publish Event="NewDialog" Value="AddonsDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <Dialog Id="AddonsDlg" Width="370" Height="270" Title="!(loc.InstallDirDlg_Title)">
+        <Control Id="BannerBitmap" Type="Bitmap" X="0" Y="0" Width="370" Height="44" TabSkip="no" Text="!(loc.InstallDirDlgBannerBitmap)" />
+        <Control Id="Title" Type="Text" X="15" Y="6" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="{\WixUI_Font_Title}Addons" />
+        <Control Id="Description" Type="Text" X="25" Y="23" Width="340" Height="15" Transparent="yes" NoPrefix="yes" Text="Welche optionalen Erweiterungen sollen mit installiert werden?" />
+        <Control Id="BannerLine" Type="Line" X="0" Y="44" Width="370" Height="0" />
+        <Control Id="RemoteCheck" Type="CheckBox" X="25" Y="60" Width="320" Height="18" Property="ADDON_REMOTE" CheckBoxValue="1" Text="Fernwartung" />
+        <Control Id="RemoteHint" Type="Text" X="43" Y="80" Width="300" Height="28" NoPrefix="yes"
+                 Text="Verbindung zu TeamViewer, AnyDesk oder RustDesk per TastenkÃ¼rzel, mit gespeicherten GerÃ¤ten und PasswÃ¶rtern." />
+        <Control Id="VaultCheck" Type="CheckBox" X="25" Y="118" Width="320" Height="18" Property="ADDON_VAULT" CheckBoxValue="1" Text="Passwort-Tresor" />
+        <Control Id="VaultHint" Type="Text" X="43" Y="138" Width="300" Height="28" NoPrefix="yes"
+                 Text="EintrÃ¤ge aus Pleasant Password Server per TastenkÃ¼rzel suchen und in das aktive Fenster eintippen." />
+        <Control Id="AddonsNote" Type="Text" X="25" Y="180" Width="320" Height="40" NoPrefix="yes"
+                 Text="Addons lassen sich spÃ¤ter im Programm unter Einstellungen, Addons ein- und ausschalten. Weitere Addons gibt es als eigene Installationsdateien." />
+        <Control Id="BottomLine" Type="Line" X="0" Y="234" Width="370" Height="0" />
+        <Control Id="Back" Type="PushButton" X="180" Y="243" Width="56" Height="17" Text="!(loc.WixUIBack)">
+          <Publish Event="NewDialog" Value="AutostartDlg" />
+        </Control>
+        <Control Id="Next" Type="PushButton" X="236" Y="243" Width="56" Height="17" Default="yes" Text="!(loc.WixUINext)">
+          <Publish Event="NewDialog" Value="VerifyReadyDlg" />
+        </Control>
+        <Control Id="Cancel" Type="PushButton" X="304" Y="243" Width="56" Height="17" Cancel="yes" Text="!(loc.WixUICancel)">
+          <Publish Event="SpawnDialog" Value="CancelDlg" />
+        </Control>
+      </Dialog>
+
+      <!-- Insert the page between "Zielordner" and "Bereit zur Installation". -->
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="UsageDlg" Order="5" Condition="WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID=&quot;1&quot;" />
+      <Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="UsageDomainDlg" Order="6" Condition="(WIXUI_DONTVALIDATEPATH OR WIXUI_INSTALLDIR_VALID=&quot;1&quot;) AND DOMAINNAME &lt;&gt; &quot;&quot;" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="AddonsDlg" Order="5" Condition="NOT Installed" />
+    </UI>
+  </Package>
+</Wix>

@@ -1,0 +1,7 @@
+KURZFASSUNG (Deutsch, nicht rechtsverbindlich)
+
+WorkspaceManager darf privat und nicht-kommerziell kostenlos genutzt, weitergegeben und verändert werden.
+
+Für jede gewerbliche Nutzung (zum Beispiel in einem Unternehmen oder zum Gelderwerb) ist eine schriftliche Absprache und Genehmigung nötig. Dafür gibt es einen Lizenzschlüssel. Nach der Installation stehen 30 Tage zum Testen zur Verfügung.
+
+Rechtsverbindlich ist der englische Lizenztext darunter.

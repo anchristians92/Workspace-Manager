@@ -1,0 +1,10 @@
+<Include xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <!-- The files of the addon "Fernwartung". Used by the main installer (optional page "Addons") and by the addon's own
+       installer. Windows Installer counts the users of a component by its GUID, so installing both ways is safe.
+       Variables: Version, RemoteDir (folder with the built DLL). Directory AddonRemoteDir is declared by the including package. -->
+  <Component Id="RemoteAddon" Directory="AddonRemoteDir" Guid="3E8D5C71-9B24-4A6F-B1D0-7F2A4C9E6B58" Condition="ADDON_REMOTE = 1">
+    <File Id="RemoteAddonDll" Source="$(RemoteDir)\WorkspaceManager.Addon.Remote.dll" KeyPath="yes" />
+    <RegistryValue Root="HKLM" Key="SOFTWARE\WorkspaceManager\Addons\Remote" Name="Version" Type="string" Value="$(Version)" />
+    <RemoveFolder Id="RemoveAddonRemoteDir" Directory="AddonRemoteDir" On="uninstall" />
+  </Component>
+</Include>

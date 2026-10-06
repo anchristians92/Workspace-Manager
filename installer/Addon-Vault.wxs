@@ -1,0 +1,40 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+  <!-- Addon "Passwort-Tresor" as its own installer. It is copied into <WorkspaceManager folder>\Addons\Vault.
+       The same files are offered on the "Addons" page of the main installer (Addon-Vault.wxi).
+       Variables passed on the command line by build.ps1: Version, VaultDir -->
+  <Package Name="WorkspaceManager Addon Passwort-Tresor"
+           Manufacturer="Andre Christians"
+           Version="$(Version)"
+           UpgradeCode="5C2B7E90-4A1D-4E83-9F6A-3D8B0C1E7A24"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="Eine neuere Version des Addons Passwort-Tresor ist bereits installiert." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="app.ico" SourceFile="..\src\WorkspaceManager\Assets\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="app.ico" />
+
+    <!-- Find the WorkspaceManager installation (the main installer writes its folder to the registry). -->
+    <Property Id="WMINSTALLDIR">
+      <RegistrySearch Id="WorkspaceManagerFolder" Root="HKLM" Key="SOFTWARE\WorkspaceManager" Name="InstallDir" Type="directory" />
+    </Property>
+    <Launch Condition="Installed OR WMINSTALLDIR" Message="WorkspaceManager ist nicht installiert. Bitte zuerst WorkspaceManager installieren und danach dieses Addon." />
+
+    <!-- The addon DLL is loaded by the running program: end it before files are replaced or removed. -->
+    <util:CloseApplication Id="CloseWorkspaceManager" Target="WorkspaceManager.exe" CloseMessage="no" RebootPrompt="no" TerminateProcess="1" />
+
+    <Property Id="ADDON_VAULT" Value="1" />
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="AddonVaultDir" Name="WorkspaceManager_Windows" />
+    </StandardDirectory>
+    <SetDirectory Id="AddonVaultDir" Value="[WMINSTALLDIR]Addons\Vault" Sequence="both" Condition="WMINSTALLDIR" />
+
+    <?include Addon-Vault.wxi?>
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Starte WorkspaceManager neu, damit das Addon geladen wird. Danach findest du es unter Einstellungen, Addons." />
+    <ui:WixUI Id="WixUI_Minimal" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+  </Package>
+</Wix>

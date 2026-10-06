@@ -1,0 +1,23 @@
+<Solution>
+  <Folder Name="/addons/" />
+  <Folder Name="/addons/Vault/">
+    <Project Path="addons/Vault/WorkspaceManager.Addon.Vault.csproj" />
+  </Folder>
+  <Folder Name="/addons/Remote/">
+    <Project Path="addons/Remote/WorkspaceManager.Addon.Remote.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/WorkspaceManager/WorkspaceManager.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Vault.Tests/">
+    <Project Path="tests/Vault.Tests/WorkspaceManager.Addon.Vault.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Remote.Tests/">
+    <Project Path="tests/Remote.Tests/WorkspaceManager.Addon.Remote.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/LicenseGenerator/LicenseGenerator.csproj" />
+    <Project Path="tools/LicenseTool/LicenseTool.csproj" />
+  </Folder>
+</Solution>

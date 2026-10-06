@@ -1,0 +1,27 @@
+# Build output
+bin/
+obj/
+artifacts/
+
+# Installer output
+*.msi
+*.wixpdb
+*.wixobj
+
+# IDE
+.vs/
+*.user
+*.suo
+
+# Local test output
+test-results.txt
+TestResults/
+
+# Never commit signing keys or issued license records
+*.key
+*.pem
+issued-licenses.csv
+
+# Local build logs
+build-full.log
+*.log

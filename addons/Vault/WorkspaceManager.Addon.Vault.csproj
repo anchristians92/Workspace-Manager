@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>WorkspaceManager.Addon.Vault</AssemblyName>
+    <RootNamespace>WorkspaceManager.Addon.Vault</RootNamespace>
+    <Version>1.0.0</Version>
+    <Product>WorkspaceManager Addon Passwort-Tresor</Product>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- The app itself provides this assembly at runtime; do not ship a second copy. -->
+    <ProjectReference Include="..\..\src\WorkspaceManager\WorkspaceManager.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

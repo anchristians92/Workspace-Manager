@@ -1,0 +1,40 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+  <!-- Addon "Fernwartung" as its own installer. It is copied into <WorkspaceManager folder>\Addons\Remote.
+       The same files are offered on the "Addons" page of the main installer (Addon-Remote.wxi).
+       Variables passed on the command line by build.ps1: Version, RemoteDir -->
+  <Package Name="WorkspaceManager Addon Fernwartung"
+           Manufacturer="Andre Christians"
+           Version="$(Version)"
+           UpgradeCode="B7E4A1C9-2D5F-4F38-8A6B-9C0D1E3F5A72"
+           Scope="perMachine">
+
+    <MajorUpgrade DowngradeErrorMessage="Eine neuere Version des Addons Fernwartung ist bereits installiert." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="app.ico" SourceFile="..\src\WorkspaceManager\Assets\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="app.ico" />
+
+    <!-- Find the WorkspaceManager installation (the main installer writes its folder to the registry). -->
+    <Property Id="WMINSTALLDIR">
+      <RegistrySearch Id="WorkspaceManagerFolder" Root="HKLM" Key="SOFTWARE\WorkspaceManager" Name="InstallDir" Type="directory" />
+    </Property>
+    <Launch Condition="Installed OR WMINSTALLDIR" Message="WorkspaceManager ist nicht installiert. Bitte zuerst WorkspaceManager installieren und danach dieses Addon." />
+
+    <!-- The addon DLL is loaded by the running program: end it before files are replaced or removed. -->
+    <util:CloseApplication Id="CloseWorkspaceManager" Target="WorkspaceManager.exe" CloseMessage="no" RebootPrompt="no" TerminateProcess="1" />
+
+    <Property Id="ADDON_REMOTE" Value="1" />
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="AddonRemoteDir" Name="WorkspaceManager_Windows" />
+    </StandardDirectory>
+    <SetDirectory Id="AddonRemoteDir" Value="[WMINSTALLDIR]Addons\Remote" Sequence="both" Condition="WMINSTALLDIR" />
+
+    <?include Addon-Remote.wxi?>
+
+    <Property Id="WIXUI_EXITDIALOGOPTIONALTEXT" Value="Starte WorkspaceManager neu, damit das Addon geladen wird. Danach findest du es unter Einstellungen, Addons." />
+    <ui:WixUI Id="WixUI_Minimal" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+  </Package>
+</Wix>
